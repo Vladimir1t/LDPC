@@ -8,14 +8,18 @@
 #include <fstream>
 #include <iostream>
 #include <random>
-#include <iomanip>      // std::setprecision
 
 using namespace std;
 
-void ldpc_test();
-int test_2();
+int test_ldpc();
+std::vector<uint8_t> bytes_to_bits(const std::vector<uint8_t>& bytes);
+std::vector<uint8_t> bits_to_bytes(const std::vector<uint8_t>& bits);
+std::vector<uint8_t> ldpc_encode(std::vector<uint8_t> info_bits, size_t info_size,  int block_length);
+std::vector<uint8_t> ldpc_decode(std::vector<double> llr, size_t info_size, int block_length);
 
 int main() {
+
+    // test_ldpc();
 
     /**
      * @param K - information symbols
@@ -24,19 +28,22 @@ int main() {
      */
     int bits = 8, K = 16, nsym = 20;
 	// TODO std::vector<uint8_t> 
-    LDPC_RS::RS_WORD data1[] = { 0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec };
+    std::vector<LDPC_RS::RS_WORD> data1 = { 0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec};
 
-	LDPC_RS::Poly msg(K, data1);
-	LDPC_RS::Poly a(K + nsym, data1);
+    //-----------------------------------------
+	LDPC_RS::Poly msg(K, data1.data());
+	LDPC_RS::Poly poly_a(K + nsym, data1.data());
     
 	LDPC_RS::ReedSolomon rs(bits);
-	rs.encode(a.coef, data1, K, nsym);
+	rs.encode(poly_a.coef, data1.data(), K, nsym);
 	cout << "Original message: " << endl;
 	msg.print();
+
 	cout << endl << "Encoded message: " << endl;
-	a.print();
+	poly_a.print();
 	cout << endl;
 
+    //-----------------------------------------
 	vector<unsigned int> corrPos, erasePos;
 	erasePos.push_back(1);
 	erasePos.push_back(2);
@@ -46,170 +53,363 @@ int main() {
 	srand(time(0));
 
 	for (unsigned char i : erasePos) {
-		a.coef[i] = 0;
+		poly_a.coef[i] = 0;
 	}
 	for (unsigned char i : corrPos) {
-		a.coef[i] = 1;
+		poly_a.coef[i] = 1;
 	}
+    poly_a.coef[10] = 13;
+    poly_a.coef[13] = 100;
 
-    a.coef[10] = 13;
-    a.coef[13] = 100;
-
-	cout << endl << "Corrupted message: " << endl;
-	a.print();
+	std::cout << endl << "Corrupted message: " << endl;
+	poly_a.print();
 	cout << endl;
-	bool success = rs.decode(a.coef, msg.coef, a.coef, K, nsym, &erasePos, true);
+    //-----------------------------------------
+
+    std::vector<uint8_t> encoded = poly_a.get_vector();
+
+    int block_length = 648; 
+    unsigned n_bits =  1;    // Битов на символ (1=BPSK, 2=4-ASK, 3=8-ASK)
+    double ebno_db =   5.0;  // Отношение сигнал/шум в dB
+
+    std::vector<uint8_t> bits_for_ldpc = bytes_to_bits(encoded);
+
+    std::vector<uint8_t> ldpc_encoded = ldpc_encode(bits_for_ldpc, bits_for_ldpc.size(), block_length);
+
+    //-----------------------------------------
+    ldpc_encoded[1] = 1;
+    ldpc_encoded[6] = 1;
+    ldpc_encoded[10] = 1;
+    ldpc_encoded[15] = 1;
+    ldpc_encoded[200] = 1;
+    ldpc_encoded[25] = 1;
+    ldpc_encoded[100] = 1;
+    ldpc_encoded[150] = 1;
+    //-----------------------------------------
+
+    std::cout << "---- Modulate LDPC ----\n"; 
+
+    Constellation modulation(n_bits);
+
+    std::vector<double> mod_sym = modulation.modulate(ldpc_encoded);
+
+    #if 0
+    // 5. Добавление шума (моделирование канала)
+    double snr_linear = std::pow(10.0, ebno_db / 10) * (block_length/2) / block_length * n_bits;
+    double noise_var = 0.5 / snr_linear; 
+    
+    std::vector<double> received_signal(mod_sym.size());
+    std::default_random_engine generator;
+    std::normal_distribution<double> noise_dist(0.0, sqrt(noise_var));
+    
+    for (size_t i = 0; i < mod_sym.size(); i++) {
+        received_signal[i] = mod_sym[i] + noise_dist(generator);
+    }
+    std::vector<double> llr = modulation.llr_compute(received_signal, noise_var);
+    #endif
+
+    // 6. Демодуляция (вычисление LLR)
+    std::vector<double> llr = modulation.llr_compute(mod_sym, 1);
+
+    //-----------------------------------------
+
+    std::vector<uint8_t> ldpc_decoded = ldpc_decode(llr, bits_for_ldpc.size(), block_length);
+
+    std::vector<uint8_t> bytes_for_rs = bits_to_bytes(ldpc_decoded);
+
+    std::vector<LDPC_RS::RS_WORD> ldpc_decoded_rs;
+    ldpc_decoded_rs.reserve(bytes_for_rs.size());
+    for (auto coef : bytes_for_rs)
+        ldpc_decoded_rs.push_back(coef);
+
+    //-----------------------------------------
+
+    std::cout << "Original info:  ";
+    for (size_t i = 0; i < encoded.size(); i++) 
+        std::cout << (int)encoded[i] << " ";
+    std::cout << "\n";
+
+    std::cout << "Decoded info:   ";
+    for (size_t i = 0; i < bytes_for_rs.size(); i++)
+        std::cout << (int)bytes_for_rs[i] << " ";
+    std::cout << "\n";
+
+    bool error = false;
+    for (size_t i = 0; i < encoded.size(); i++) {
+        if (encoded[i] != bytes_for_rs[i]) {
+            error = true;
+            break;
+        }
+    }
+
+    if (error) {
+        std::cout << "\nDECODING FAILED LDPC! Bit errors detected.\n\n";
+    } else {
+        std::cout << "\nLDPC SUCCESS! All bits decoded correctly.\n\n";
+    }
+
+    
+    //-----------------------------------------
+
+	bool success = rs.decode(ldpc_decoded_rs.data(), msg.coef, ldpc_decoded_rs.data(), K, nsym, &erasePos, true);
 	if (!success) {
-		cout << "Decoding failed!" << endl;
+		cout << "Decoding RS + LDPC failed!\n" << endl;
 	} 
     else {
-		cout << "After decoding: " << endl;
-		a.print();
+		// cout << "After decoding: " << endl;
+		// poly_a.print();
+        cout << "Decoding RS + LDPC SUCCESS!\n" << endl;
 		cout << endl << "Decoded message: " << endl;
 		msg.print();
 	}
 
-    // ldpc_test();
-    test_2();
-
     return 0;
 }
 
-void ldpc_test() {
-
-    unsigned block_length = 648;
-    unsigned rate_index = 0;
-    double target_error_rate = 0.01; // Целевой уровень ошибок
-    unsigned num_tests = 1000;
-
-    LdpcCode ldpc_code(0, 0);
-    ldpc_code.load_wifi_ldpc(block_length, rate_index);
-    unsigned info_length = ldpc_code.get_info_length();
-
-    // Инициализация генератора случайных чисел
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> bit_dist(0, 1);
-    std::uniform_int_distribution<> pos_dist(0, block_length-1);
-
-    // Автоподбор количества ошибок
-    unsigned min_errors = 1;
-    unsigned max_errors = block_length/10; // Макс. 10% ошибок
-    unsigned current_errors = min_errors;
+std::vector<uint8_t> bytes_to_bits(const std::vector<uint8_t>& bytes) {
+    std::vector<uint8_t> bits;
+    bits.reserve(bytes.size() * 8);
     
-    while (current_errors <= max_errors) {
-        unsigned error_count = 0;
-
-        for (unsigned test = 0; test < num_tests; ++test) {
-            // Генерация данных
-            std::vector<uint8_t> info_bits(info_length);
-            for (auto& bit : info_bits) bit = bit_dist(gen);
-
-            // Кодирование
-            std::vector<uint8_t> coded_bits = ldpc_code.encode(info_bits);
-
-            // Инжекция ошибок
-            std::vector<uint8_t> corrupted_bits = coded_bits;
-            std::vector<int> error_positions(current_errors);
-            for (auto& pos : error_positions) {
-                pos = pos_dist(gen);
-                corrupted_bits[pos] ^= 1;
-            }
-
-            // Мягкое декодирование (улучшенные LLR)
-            std::vector<double> llr(block_length);
-            for (unsigned i = 0; i < block_length; ++i) {
-                // Более информативные LLR для ошибочных битов
-                llr[i] = (corrupted_bits[i] ? -3.0 : 3.0); // Сильная уверенность
-                
-                // Ослабляем уверенность для ошибочных битов
-                for (const auto& pos : error_positions) {
-                    if (i == pos) {
-                        llr[i] = (corrupted_bits[i] ? -0.5 : 0.5); // Слабая уверенность
-                        break;
-                    }
-                }
-            }
-
-            // Декодирование
-            std::vector<uint8_t> decoded_bits = ldpc_code.decode(llr, 20, false);
-
-            // Проверка
-            for (unsigned i = 0; i < info_length; ++i) {
-                if (decoded_bits[i] != info_bits[i]) {
-                    error_count++;
-                    break;
-                }
-            }
+    for (uint8_t byte : bytes) {
+        for (int i = 0; i < 8; ++i) {
+            bits.push_back((byte >> (7-i)) & 1);
         }
-
-        double error_rate = (double)error_count / num_tests;
-        std::cout << "Errors: " << current_errors 
-                  << " Error rate: " << error_rate << std::endl;
-
-        if (error_rate >= target_error_rate) {
-            std::cout << "Found threshold: " << current_errors 
-                      << " errors causes ~1% BLER" << std::endl;
-            break;
-        }
-
-        current_errors++;
     }
+    
+    return bits;
 }
 
-int test_2() {
-    // 1. Инициализация
-    const int block_length = 12;  // Упрощённый маленький блок
-    const int info_length = 5;   // 4 информационных бита
-    unsigned rate_index = 0;
-    // LdpcCode ldpc_code(block_length, info_length);
-    LdpcCode ldpc_code(6, 5);
-    ldpc_code.load_wifi_ldpc(block_length, 0);
-    // ldpc_code.load_wifi_ldpc(4, rate_index);
+std::vector<uint8_t> bits_to_bytes(const std::vector<uint8_t>& bits) {
+    std::vector<uint8_t> bytes;
+    bytes.reserve((bits.size() + 7) / 8);
     
-    // 2. Фиксированные тестовые данные (для простоты)
-    std::vector<uint8_t> info_bits {1, 0, 1, 0, 1}; // Информационные биты
+    for (size_t i = 0; i < bits.size(); i += 8) {
+        uint8_t byte = 0;
+        for (int j = 0; j < 8 && (i+j) < bits.size(); ++j) {
+            byte |= (bits[i+j] << (7-j));
+        }
+        bytes.push_back(byte);
+    }
     
-    // 3. Кодирование
+    return bytes;
+}
+
+
+
+// void ldpc_test() {
+
+//     unsigned block_length = 648;
+//     unsigned rate_index = 0;
+//     double target_error_rate = 0.01; // Целевой уровень ошибок
+//     unsigned num_tests = 1000;
+
+//     LDPC_RS::LdpcCode ldpc_code(0, 0);
+//     ldpc_code.load_wifi_ldpc(block_length, rate_index);
+//     unsigned info_length = ldpc_code.get_info_length();
+
+//     // Инициализация генератора случайных чисел
+//     std::random_device rd;
+//     std::mt19937 gen(rd());
+//     std::uniform_int_distribution<> bit_dist(0, 1);
+//     std::uniform_int_distribution<> pos_dist(0, block_length-1);
+
+//     // Автоподбор количества ошибок
+//     unsigned min_errors = 1;
+//     unsigned max_errors = block_length/10; // Макс. 10% ошибок
+//     unsigned current_errors = min_errors;
+    
+//     while (current_errors <= max_errors) {
+//         unsigned error_count = 0;
+
+//         for (unsigned test = 0; test < num_tests; ++test) {
+//             // Генерация данных
+//             std::vector<uint8_t> info_bits(info_length);
+//             for (auto& bit : info_bits) bit = bit_dist(gen);
+
+//             // Кодирование
+//             std::vector<uint8_t> coded_bits = ldpc_code.encode(info_bits);
+
+//             // Инжекция ошибок
+//             std::vector<uint8_t> corrupted_bits = coded_bits;
+//             std::vector<int> error_positions(current_errors);
+//             for (auto& pos : error_positions) {
+//                 pos = pos_dist(gen);
+//                 corrupted_bits[pos] ^= 1;
+//             }
+
+//             // Мягкое декодирование (улучшенные LLR)
+//             std::vector<double> llr(block_length);
+//             for (unsigned i = 0; i < block_length; ++i) {
+//                 // Более информативные LLR для ошибочных битов
+//                 llr[i] = (corrupted_bits[i] ? -3.0 : 3.0); // Сильная уверенность
+                
+//                 // Ослабляем уверенность для ошибочных битов
+//                 for (const auto& pos : error_positions) {
+//                     if (i == pos) {
+//                         llr[i] = (corrupted_bits[i] ? -0.5 : 0.5); // Слабая уверенность
+//                         break;
+//                     }
+//                 }
+//             }
+
+           
+//             std::vector<uint8_t> decoded_bits = ldpc_code.decode(llr, 20, false);
+
+//             for (unsigned i = 0; i < info_length; ++i) {
+//                 if (decoded_bits[i] != info_bits[i]) {
+//                     error_count++;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         double error_rate = (double)error_count / num_tests;
+//         std::cout << "Errors: " << current_errors 
+//                   << " Error rate: " << error_rate << std::endl;
+
+//         if (error_rate >= target_error_rate) {
+//             std::cout << "Found threshold: " << current_errors 
+//                       << " errors causes ~1% BLER" << std::endl;
+//             break;
+//         }
+
+//         current_errors++;
+//     }
+// }
+
+std::vector<uint8_t> ldpc_encode(std::vector<uint8_t> info_bits, size_t info_size,  int block_length) {
+
+    std::cout << "---- Encode LDPC ----\n"; 
+    unsigned rate_index = 0; 
+
+    LDPC_RS::LdpcCode ldpc_code(0, 0);
+
+    #if 1
+        // std::vector<uint8_t> info_bits = {1, 1, 0, 1, 0, 0, 1, 1, 0, 1};
+        // size_t info_size = info_bits.size();
+
+        if (info_size < 648 / 2)
+            rate_index = 0;
+        else if (info_size < 1296 / 2)
+            block_length = 1296;
+        else if (info_size < 1944 / 2)
+            block_length = 1944;
+
+        ldpc_code.load_wifi_ldpc(block_length, rate_index);
+        info_bits.resize(ldpc_code.get_info_length());
+    #endif
+
+    #if 0
+    unsigned info_length = ldpc_code.get_info_length();
+
+    std::vector<uint8_t> info_bits(info_length);
+    for (auto& bit : info_bits) bit = rand() % 2;
+    #endif
+
+    //std::cout << "encode [2]\n"; 
+   
     std::vector<uint8_t> coded_bits = ldpc_code.encode(info_bits);
-    std::cout << "Encoded bits: ";
-    for (auto bit : coded_bits) std::cout << (int)bit << " ";
-    std::cout << std::endl;
 
-    // 4. Внесение ошибок вручную
-    std::vector<uint8_t> corrupted_bits = coded_bits;
-    std::cout << "Enter positions to flip (1-" << block_length << "), 0 to end: ";
+    //std::cout << "encode [3]\n"; 
+
+    return coded_bits;
+}
+
+std::vector<uint8_t> ldpc_decode(std::vector<double> llr, size_t info_size, int block_length) {
+
+    std::cout << "---- Decode LDPC-----\n"; 
+    unsigned rate_index = 0; 
+    LDPC_RS::LdpcCode ldpc_code(block_length, block_length / 2);
+
+    ldpc_code.load_wifi_ldpc(block_length, rate_index);
+    std::vector<uint8_t> decoded_bits = ldpc_code.decode(llr, 20, true); 
+    //std::cout << "decode [2]\n"; 
+
+    decoded_bits.resize(info_size);
+
+    return decoded_bits;
+}
+
+int test_ldpc() {
+   
+   std::cout << "\n---- LDPC TEST ----\n\n";
+   
+    int block_length = 648; 
+    unsigned rate_index = 0; 
+    unsigned n_bits = 1;    // Битов на символ (1=BPSK, 2=4-ASK, 3=8-ASK)
+    double ebno_db = 5.0;   // Отношение сигнал/шум в dB
+
+    LDPC_RS::LdpcCode ldpc_code(0, 0);
+
+    #if 1
+        std::vector<uint8_t> info_bits = {1, 1, 0, 1, 0, 0, 1, 1, 0, 1};
+        size_t info_size = info_bits.size();
+
+        if (info_size < 648 / 2)
+            rate_index = 0;
+        else if (info_size < 1296 / 2)
+            block_length = 1296;
+        else if (info_size < 1944 / 2)
+            block_length = 1944;
+
+        ldpc_code.load_wifi_ldpc(block_length, rate_index);
+        info_bits.resize(ldpc_code.get_info_length());
+    #endif
+
+    #if 0
+    unsigned info_length = ldpc_code.get_info_length();
+
+    std::vector<uint8_t> info_bits(info_length);
+    for (auto& bit : info_bits) bit = rand() % 2;
+    #endif
+
+   
+    std::vector<uint8_t> coded_bits = ldpc_code.encode(info_bits);
+
+    // 4. Модуляция (преобразование битов в символы)
+    Constellation modulation(n_bits);
+   
+    std::vector<double> mod_sym = modulation.modulate(coded_bits);
+
+    // 5. Добавление шума (моделирование канала)
+    double snr_linear = std::pow(10.0, ebno_db / 10) * ldpc_code.get_info_length() / block_length * n_bits;
+    double noise_var = 0.5 / snr_linear; 
     
-    int pos;
-    while (std::cin >> pos && pos != 0) {
-        if (pos >= 1 && pos <= block_length) {
-            corrupted_bits[pos-1] ^= 1; // Инвертируем бит
-            std::cout << "Flipped bit at position " << pos << std::endl;
-        }
+    std::vector<double> received_signal(mod_sym.size());
+    std::default_random_engine generator;
+    std::normal_distribution<double> noise_dist(0.0, sqrt(noise_var));
+    
+    for (size_t i = 0; i < mod_sym.size(); i++) {
+        received_signal[i] = mod_sym[i] + noise_dist(generator);
     }
 
-    // 5. Декодирование
-    std::vector<double> llr(block_length);
-    for (int i = 0; i < block_length; i++) {
-        llr[i] = corrupted_bits[i]; //? -1.0 : 1.0; // Простые LLR
-    }
-    for (auto a : llr)
-        std::cout << a <<'\n';
-    
-    std::vector<uint8_t> decoded_bits = ldpc_code.decode(llr, 10, false);
+    // 6. Демодуляция (вычисление LLR)
+    std::vector<double> llr = modulation.llr_compute(received_signal, noise_var);
 
-    // 6. Проверка результата
-    std::cout << "\nOriginal info: ";
-    for (auto bit : info_bits) std::cout << (int)bit << " ";
-    
-    std::cout << "\nDecoded info:  ";
-    for (int i = 0; i < info_length; i++) {
-        std::cout << '[' << (int)decoded_bits[i] << "] ";
+    std::vector<uint8_t> decoded_bits = ldpc_code.decode(llr, 20, true); 
+
+    bool error = false;
+    for (size_t i = 0; i < info_size; i++) {
         if (decoded_bits[i] != info_bits[i]) {
-            std::cout << "\n\nDECODING FAILED! Bit errors detected.";
+            error = true;
+            break;
         }
     }
-    
-    std::cout << "\n\nSUCCESS! All bits decoded correctly.";
+    std::cout << "Original info:  ";
+    for (size_t i = 0; i < info_size; i++) 
+        std::cout << (int)info_bits[i] << " ";
+    std::cout << "\n";
+
+    std::cout << "Decoded info:   ";
+    for (size_t i = 0; i < info_size; i++)
+        std::cout << (int)decoded_bits[i] << " ";
+    std::cout << "\n";
+
+    if (error) {
+        std::cout << "\nDECODING FAILED! Bit errors detected.\n";
+    } else {
+        std::cout << "\nSUCCESS! All bits decoded correctly.\n";
+    }
+
     return 0;
 }
