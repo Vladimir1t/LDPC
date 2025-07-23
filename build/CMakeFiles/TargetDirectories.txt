@@ -1,3 +1,3 @@
-/Users/a/Desktop/LDPC/build/CMakeFiles/my_project.dir
+/Users/a/Desktop/LDPC/build/CMakeFiles/RS_LDPC_Algorithm.dir
 /Users/a/Desktop/LDPC/build/CMakeFiles/edit_cache.dir
 /Users/a/Desktop/LDPC/build/CMakeFiles/rebuild_cache.dir

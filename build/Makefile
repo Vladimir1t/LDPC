@@ -117,24 +117,96 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named my_project
+# Target rules for targets named RS_LDPC_Algorithm
 
 # Build rule for target.
-my_project: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 my_project
-.PHONY : my_project
+RS_LDPC_Algorithm: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 RS_LDPC_Algorithm
+.PHONY : RS_LDPC_Algorithm
 
 # fast build rule for target.
-my_project/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/build
-.PHONY : my_project/fast
+RS_LDPC_Algorithm/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/build
+.PHONY : RS_LDPC_Algorithm/fast
+
+LDPC/LdpcC/Constellation.o: LDPC/LdpcC/Constellation.cpp.o
+.PHONY : LDPC/LdpcC/Constellation.o
+
+# target to build an object file
+LDPC/LdpcC/Constellation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/Constellation.cpp.o
+.PHONY : LDPC/LdpcC/Constellation.cpp.o
+
+LDPC/LdpcC/Constellation.i: LDPC/LdpcC/Constellation.cpp.i
+.PHONY : LDPC/LdpcC/Constellation.i
+
+# target to preprocess a source file
+LDPC/LdpcC/Constellation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/Constellation.cpp.i
+.PHONY : LDPC/LdpcC/Constellation.cpp.i
+
+LDPC/LdpcC/Constellation.s: LDPC/LdpcC/Constellation.cpp.s
+.PHONY : LDPC/LdpcC/Constellation.s
+
+# target to generate assembly for a file
+LDPC/LdpcC/Constellation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/Constellation.cpp.s
+.PHONY : LDPC/LdpcC/Constellation.cpp.s
+
+LDPC/LdpcC/LdpcCode.o: LDPC/LdpcC/LdpcCode.cpp.o
+.PHONY : LDPC/LdpcC/LdpcCode.o
+
+# target to build an object file
+LDPC/LdpcC/LdpcCode.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/LdpcCode.cpp.o
+.PHONY : LDPC/LdpcC/LdpcCode.cpp.o
+
+LDPC/LdpcC/LdpcCode.i: LDPC/LdpcC/LdpcCode.cpp.i
+.PHONY : LDPC/LdpcC/LdpcCode.i
+
+# target to preprocess a source file
+LDPC/LdpcC/LdpcCode.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/LdpcCode.cpp.i
+.PHONY : LDPC/LdpcC/LdpcCode.cpp.i
+
+LDPC/LdpcC/LdpcCode.s: LDPC/LdpcC/LdpcCode.cpp.s
+.PHONY : LDPC/LdpcC/LdpcCode.s
+
+# target to generate assembly for a file
+LDPC/LdpcC/LdpcCode.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/LdpcCode.cpp.s
+.PHONY : LDPC/LdpcC/LdpcCode.cpp.s
+
+ReedSolomon/ReedSolomon/ReedSolomon.o: ReedSolomon/ReedSolomon/ReedSolomon.cpp.o
+.PHONY : ReedSolomon/ReedSolomon/ReedSolomon.o
+
+# target to build an object file
+ReedSolomon/ReedSolomon/ReedSolomon.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/ReedSolomon/ReedSolomon/ReedSolomon.cpp.o
+.PHONY : ReedSolomon/ReedSolomon/ReedSolomon.cpp.o
+
+ReedSolomon/ReedSolomon/ReedSolomon.i: ReedSolomon/ReedSolomon/ReedSolomon.cpp.i
+.PHONY : ReedSolomon/ReedSolomon/ReedSolomon.i
+
+# target to preprocess a source file
+ReedSolomon/ReedSolomon/ReedSolomon.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/ReedSolomon/ReedSolomon/ReedSolomon.cpp.i
+.PHONY : ReedSolomon/ReedSolomon/ReedSolomon.cpp.i
+
+ReedSolomon/ReedSolomon/ReedSolomon.s: ReedSolomon/ReedSolomon/ReedSolomon.cpp.s
+.PHONY : ReedSolomon/ReedSolomon/ReedSolomon.s
+
+# target to generate assembly for a file
+ReedSolomon/ReedSolomon/ReedSolomon.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/ReedSolomon/ReedSolomon/ReedSolomon.cpp.s
+.PHONY : ReedSolomon/ReedSolomon/ReedSolomon.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
 # target to build an object file
 src/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/src/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/src/main.cpp.o
 .PHONY : src/main.cpp.o
 
 src/main.i: src/main.cpp.i
@@ -142,7 +214,7 @@ src/main.i: src/main.cpp.i
 
 # target to preprocess a source file
 src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/src/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/src/main.cpp.i
 .PHONY : src/main.cpp.i
 
 src/main.s: src/main.cpp.s
@@ -150,7 +222,7 @@ src/main.s: src/main.cpp.s
 
 # target to generate assembly for a file
 src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/src/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
 # Help Target
@@ -161,7 +233,16 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... my_project"
+	@echo "... RS_LDPC_Algorithm"
+	@echo "... LDPC/LdpcC/Constellation.o"
+	@echo "... LDPC/LdpcC/Constellation.i"
+	@echo "... LDPC/LdpcC/Constellation.s"
+	@echo "... LDPC/LdpcC/LdpcCode.o"
+	@echo "... LDPC/LdpcC/LdpcCode.i"
+	@echo "... LDPC/LdpcC/LdpcCode.s"
+	@echo "... ReedSolomon/ReedSolomon/ReedSolomon.o"
+	@echo "... ReedSolomon/ReedSolomon/ReedSolomon.i"
+	@echo "... ReedSolomon/ReedSolomon/ReedSolomon.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

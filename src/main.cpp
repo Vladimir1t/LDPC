@@ -1,199 +1,215 @@
+#include "ReedSolomon.h"
+#include "Constellation.h"
+#include "LdpcCode.h"
+
+#include <time.h>
+#include <iomanip>
 #include <iostream>
-#include <memory>
-#include <vector>
-#include <string>
+#include <fstream>
+#include <iostream>
+#include <random>
+#include <iomanip>      // std::setprecision
 
-#include <aff3ct.hpp>
-// #include "/Users/a/Desktop/LDPC/aff3ct/include/Module/Decoder/RS/Decoder_RS.hpp"
+using namespace std;
 
-using namespace aff3ct;
+void ldpc_test();
+int test_2();
 
-struct params
-{
-    const int m = 8;          // GF(2^8) - 8 bits per symbol
-    const int K = 223;     // Information symbols
-    const int N = 255;     // Codeword symbols (2^m - 1)
+int main() {
+
+    /**
+     * @param K - information symbols
+     * @param bits - size of each symbol
+     * @param nsym - 2t (t - max possible number of errors)
+     */
+    int bits = 8, K = 16, nsym = 20;
+	// TODO std::vector<uint8_t> 
+    LDPC_RS::RS_WORD data1[] = { 0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec };
+
+	LDPC_RS::Poly msg(K, data1);
+	LDPC_RS::Poly a(K + nsym, data1);
     
-    // Derived bit-level parameters
-    const int K_rs = K * m;   // 223 * 8 = 1784 bits
-    const int N_rs = N * m;   // 255 * 8 = 2040 bits
-    const int n_rdncy = (N - K) / 2; // 32 redundancy symbols
-	int   fe    =  100;     // number of frame errors
-	int   seed      =   0;     // PRNG seed for the AWGN channel
-	float ebn0_min  =   0.00f; // minimum SNR value
-	float ebn0_max  =  10.01f; // maximum SNR value
-	float ebn0_step =   1.00f; // SNR step
-	float R;                   // code rate (R=K/N)
-};
-void init_params(params &p);
+	LDPC_RS::ReedSolomon rs(bits);
+	rs.encode(a.coef, data1, K, nsym);
+	cout << "Original message: " << endl;
+	msg.print();
+	cout << endl << "Encoded message: " << endl;
+	a.print();
+	cout << endl;
 
-struct modules
-{
-	std::unique_ptr<spu::module::Source_random<>>     source;
-	std::unique_ptr<module::Encoder_RS<>> encoder;
-	std::unique_ptr<module::Modem_BPSK<>>             modem;
-	std::unique_ptr<module::Channel_AWGN_LLR<>>       channel;
-	std::unique_ptr<module::Decoder_RS<>> decoder;
-	std::unique_ptr<module::Monitor_BFER<>>           monitor;
-};
-void init_modules( params &p, modules &m);
+	vector<unsigned int> corrPos, erasePos;
+	erasePos.push_back(1);
+	erasePos.push_back(2);
+	erasePos.push_back(3);
+	corrPos.push_back(5);
+	corrPos.push_back(6);
+	srand(time(0));
 
-struct buffers
-{
-	std::vector<int  > ref_bits;
-	std::vector<int  > enc_bits;
-	std::vector<float> symbols;
-	std::vector<float> sigma;
-	std::vector<float> noisy_symbols;
-	std::vector<float> LLRs;
-	std::vector<int  > dec_bits;
-};
-void init_buffers(const params &p, buffers &b);
-
-struct utils
-{
-	std::unique_ptr<tools::Sigma<>>               noise;     // a sigma noise type
-	std::vector<std::unique_ptr<spu::tools::Reporter>> reporters; // list of reporters dispayed in the terminal
-	std::unique_ptr<spu::tools::Terminal_std>          terminal;  // manage the output text in the terminal
-};
-void init_utils(const modules &m, utils &u);
-
-int main(int argc, char** argv)
-{
-	// get the AFF3CT version
-	const std::string v = "v" + std::to_string(tools::version_major()) + "." +
-	                            std::to_string(tools::version_minor()) + "." +
-	                            std::to_string(tools::version_release());
-
-	std::cout << "#----------------------------------------------------------"      << std::endl;
-	std::cout << "# This is a basic program using the AFF3CT library (" << v << ")" << std::endl;
-	std::cout << "# Feel free to improve it as you want to fit your needs."         << std::endl;
-	std::cout << "#----------------------------------------------------------"      << std::endl;
-	std::cout << "#"                                                                << std::endl;
-
-	params p;  init_params (p   ); // create and initialize the parameters defined by the user
-	modules m; init_modules(p, m); // create and initialize the modules
-	buffers b; init_buffers(p, b); // create and initialize the buffers required by the modules
-	utils u;   init_utils  (m, u); // create and initialize the utils
-
-	// display the legend in the terminal
-	u.terminal->legend();
-
-	// loop over the various SNRs
-	for (auto ebn0 = p.ebn0_min; ebn0 < p.ebn0_max; ebn0 += p.ebn0_step)
-	{
-		// compute the current sigma for the channel noise
-		const auto esn0 = tools::ebn0_to_esn0(ebn0, p.R);
-		std::fill(b.sigma.begin(), b.sigma.end(), tools::esn0_to_sigma(esn0));
-
-		u.noise->set_values(b.sigma[0], ebn0, esn0);
-
-		// display the performance (BER and FER) in real time (in a separate thread)
-		u.terminal->start_temp_report();
-
-		// run the simulation chain
-		while (!m.monitor->fe_limit_achieved() /*&& !u.terminal->is_interrupt()*/)
-		{
-            std::cout << "[0]\n";
-			m.source ->generate    (                          b.ref_bits   );
-
-            std::cout << "[1]" << b.ref_bits.size() << ' ' << b.enc_bits.size() << '\n';
-
-			m.encoder->encode      (         b.ref_bits,      b.enc_bits     );
-            std::cout << "[2]\n";
-		    m.modem  ->modulate    (         b.enc_bits,      b.symbols      );
-            std::cout << "[3]\n";
-			m.channel->add_noise   (b.sigma, b.symbols,       b.noisy_symbols);
-            std::cout << "[4]\n";
-			m.modem  ->demodulate  (b.sigma, b.noisy_symbols, b.LLRs         );
-            std::cout << "[5]\n";
-			m.decoder->decode_siho (         b.LLRs,          b.dec_bits     );
-            std::cout << "[6]\n";
-			m.monitor->check_errors(         b.dec_bits,      b.ref_bits     );
-		}
-
-		// display the performance (BER and FER) in the terminal
-		u.terminal->final_report();
-
-		// reset the monitor for the next SNR
-		m.monitor->reset();
-		// u.terminal->reset();
-
-		// if user pressed Ctrl+c twice, exit the SNRs loop
-		// if (u.terminal->is_over()) break;
+	for (unsigned char i : erasePos) {
+		a.coef[i] = 0;
+	}
+	for (unsigned char i : corrPos) {
+		a.coef[i] = 1;
 	}
 
-	std::cout << "# End of the simulation" << std::endl;
+    a.coef[10] = 13;
+    a.coef[13] = 100;
 
-	return 0;
+	cout << endl << "Corrupted message: " << endl;
+	a.print();
+	cout << endl;
+	bool success = rs.decode(a.coef, msg.coef, a.coef, K, nsym, &erasePos, true);
+	if (!success) {
+		cout << "Decoding failed!" << endl;
+	} 
+    else {
+		cout << "After decoding: " << endl;
+		a.print();
+		cout << endl << "Decoded message: " << endl;
+		msg.print();
+	}
+
+    // ldpc_test();
+    test_2();
+
+    return 0;
 }
 
-void init_params(params &p)
-{
-	p.R = (float)p.K / (float)p.N;
-	std::cout << "# * Simulation parameters: "              << std::endl;
-	std::cout << "#    ** Frame errors   = " << p.fe        << std::endl;
-	std::cout << "#    ** Noise seed     = " << p.seed      << std::endl;
-	std::cout << "#    ** Info. bits (K) = " << p.K         << std::endl;
-	std::cout << "#    ** Frame size (N) = " << p.N         << std::endl;
-	std::cout << "#    ** Code rate  (R) = " << p.R         << std::endl;
-	std::cout << "#    ** SNR min   (dB) = " << p.ebn0_min  << std::endl;
-	std::cout << "#    ** SNR max   (dB) = " << p.ebn0_max  << std::endl;
-	std::cout << "#    ** SNR step  (dB) = " << p.ebn0_step << std::endl;
-	std::cout << "#"                                        << std::endl;
+void ldpc_test() {
+
+    unsigned block_length = 648;
+    unsigned rate_index = 0;
+    double target_error_rate = 0.01; // Целевой уровень ошибок
+    unsigned num_tests = 1000;
+
+    LdpcCode ldpc_code(0, 0);
+    ldpc_code.load_wifi_ldpc(block_length, rate_index);
+    unsigned info_length = ldpc_code.get_info_length();
+
+    // Инициализация генератора случайных чисел
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> bit_dist(0, 1);
+    std::uniform_int_distribution<> pos_dist(0, block_length-1);
+
+    // Автоподбор количества ошибок
+    unsigned min_errors = 1;
+    unsigned max_errors = block_length/10; // Макс. 10% ошибок
+    unsigned current_errors = min_errors;
+    
+    while (current_errors <= max_errors) {
+        unsigned error_count = 0;
+
+        for (unsigned test = 0; test < num_tests; ++test) {
+            // Генерация данных
+            std::vector<uint8_t> info_bits(info_length);
+            for (auto& bit : info_bits) bit = bit_dist(gen);
+
+            // Кодирование
+            std::vector<uint8_t> coded_bits = ldpc_code.encode(info_bits);
+
+            // Инжекция ошибок
+            std::vector<uint8_t> corrupted_bits = coded_bits;
+            std::vector<int> error_positions(current_errors);
+            for (auto& pos : error_positions) {
+                pos = pos_dist(gen);
+                corrupted_bits[pos] ^= 1;
+            }
+
+            // Мягкое декодирование (улучшенные LLR)
+            std::vector<double> llr(block_length);
+            for (unsigned i = 0; i < block_length; ++i) {
+                // Более информативные LLR для ошибочных битов
+                llr[i] = (corrupted_bits[i] ? -3.0 : 3.0); // Сильная уверенность
+                
+                // Ослабляем уверенность для ошибочных битов
+                for (const auto& pos : error_positions) {
+                    if (i == pos) {
+                        llr[i] = (corrupted_bits[i] ? -0.5 : 0.5); // Слабая уверенность
+                        break;
+                    }
+                }
+            }
+
+            // Декодирование
+            std::vector<uint8_t> decoded_bits = ldpc_code.decode(llr, 20, false);
+
+            // Проверка
+            for (unsigned i = 0; i < info_length; ++i) {
+                if (decoded_bits[i] != info_bits[i]) {
+                    error_count++;
+                    break;
+                }
+            }
+        }
+
+        double error_rate = (double)error_count / num_tests;
+        std::cout << "Errors: " << current_errors 
+                  << " Error rate: " << error_rate << std::endl;
+
+        if (error_rate >= target_error_rate) {
+            std::cout << "Found threshold: " << current_errors 
+                      << " errors causes ~1% BLER" << std::endl;
+            break;
+        }
+
+        current_errors++;
+    }
 }
 
-void init_modules( params &p, modules &m)
-{
-    // const int m_gf = 8; // Размерность поля GF(2^8)
-    // const int N_rs = p.N / m_gf; // Длина кода в символах (должна быть <= 255)
-    // const int K_rs = p.K / m_gf; // Информационных символов
+int test_2() {
+    // 1. Инициализация
+    const int block_length = 12;  // Упрощённый маленький блок
+    const int info_length = 5;   // 4 информационных бита
+    unsigned rate_index = 0;
+    // LdpcCode ldpc_code(block_length, info_length);
+    LdpcCode ldpc_code(6, 5);
+    ldpc_code.load_wifi_ldpc(block_length, 0);
+    // ldpc_code.load_wifi_ldpc(4, rate_index);
+    
+    // 2. Фиксированные тестовые данные (для простоты)
+    std::vector<uint8_t> info_bits {1, 0, 1, 0, 1}; // Информационные биты
+    
+    // 3. Кодирование
+    std::vector<uint8_t> coded_bits = ldpc_code.encode(info_bits);
+    std::cout << "Encoded bits: ";
+    for (auto bit : coded_bits) std::cout << (int)bit << " ";
+    std::cout << std::endl;
 
-    // if (p.K % m_gf != 0 || p.N % m_gf != 0) {
-    //     throw std::runtime_error("K and N must be divisible by m (symbol size)");
-    // }
+    // 4. Внесение ошибок вручную
+    std::vector<uint8_t> corrupted_bits = coded_bits;
+    std::cout << "Enter positions to flip (1-" << block_length << "), 0 to end: ";
+    
+    int pos;
+    while (std::cin >> pos && pos != 0) {
+        if (pos >= 1 && pos <= block_length) {
+            corrupted_bits[pos-1] ^= 1; // Инвертируем бит
+            std::cout << "Flipped bit at position " << pos << std::endl;
+        }
+    }
 
-    // // Создаём генератор полиномов для RS-кода
-    // tools::RS_polynomial_generator GF(m_gf, N_rs - K_rs);
-    // // Create the Galois Field generator first
-    tools::RS_polynomial_generator GF(p.N, p.n_rdncy); // You'll need to define m and n_rdncy in your params
+    // 5. Декодирование
+    std::vector<double> llr(block_length);
+    for (int i = 0; i < block_length; i++) {
+        llr[i] = corrupted_bits[i]; //? -1.0 : 1.0; // Простые LLR
+    }
+    for (auto a : llr)
+        std::cout << a <<'\n';
+    
+    std::vector<uint8_t> decoded_bits = ldpc_code.decode(llr, 10, false);
 
-	m.source  = std::unique_ptr<spu::module::Source_random    <>>(new spu::module::Source_random<>(p.K ));
-    std::cout << "[1]\n";
-	m.encoder = std::unique_ptr<module::Encoder_RS            <>>(new module::Encoder_RS<>(p.K, p.N, GF));
-    std::cout << "[2]\n";
-	m.modem   = std::unique_ptr<module::Modem_BPSK            <>>(new module::Modem_BPSK<>(p.N_rs ));
-    std::cout << "[3]\n";
-	m.channel = std::unique_ptr<module::Channel_AWGN_LLR      <>>(new module::Channel_AWGN_LLR<>(p.N ));
-    std::cout << "[4]\n";
-    m.decoder = std::unique_ptr<module::Decoder_RS_std        <>>(new module::Decoder_RS_std<>(p.K, p.N, GF));	
-    std::cout << "[5]\n";
-    m.monitor = std::unique_ptr<module::Monitor_BFER          <>>(new module::Monitor_BFER<>(p.K, p.fe));
-    std::cout << "[6]\n";
-	m.channel->set_seed(p.seed);
-};
-
-void init_buffers(const params &p, buffers &b)
-{
-	b.ref_bits      = std::vector<int  >(p.K);
-	b.enc_bits      = std::vector<int  >(p.N);
-	b.symbols       = std::vector<float>(p.N);
-	b.sigma         = std::vector<float>(  1);
-	b.noisy_symbols = std::vector<float>(p.N);
-	b.LLRs          = std::vector<float>(p.N);
-	b.dec_bits      = std::vector<int  >(p.K);
-}
-
-void init_utils(const modules &m, utils &u)
-{
-	// create a sigma noise type
-	u.noise = std::unique_ptr<tools::Sigma<>>(new tools::Sigma<>());
-	// report the noise values (Es/N0 and Eb/N0)
-	u.reporters.push_back(std::unique_ptr<spu::tools::Reporter>(new tools::Reporter_noise<>(*u.noise)));
-	// report the bit/frame error rates
-	u.reporters.push_back(std::unique_ptr<spu::tools::Reporter>(new tools::Reporter_BFER<>(*m.monitor)));
-	// report the simulation throughputs
-	u.reporters.push_back(std::unique_ptr<spu::tools::Reporter>(new tools::Reporter_throughput<>(*m.monitor)));
-	// create a terminal that will display the collected data from the reporters
-	u.terminal = std::unique_ptr<spu::tools::Terminal_std>(new spu::tools::Terminal_std(u.reporters));
+    // 6. Проверка результата
+    std::cout << "\nOriginal info: ";
+    for (auto bit : info_bits) std::cout << (int)bit << " ";
+    
+    std::cout << "\nDecoded info:  ";
+    for (int i = 0; i < info_length; i++) {
+        std::cout << '[' << (int)decoded_bits[i] << "] ";
+        if (decoded_bits[i] != info_bits[i]) {
+            std::cout << "\n\nDECODING FAILED! Bit errors detected.";
+        }
+    }
+    
+    std::cout << "\n\nSUCCESS! All bits decoded correctly.";
+    return 0;
 }

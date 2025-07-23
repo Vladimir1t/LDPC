@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/RS_LDPC_Algorithm.dir/ReedSolomon/ReedSolomon/ReedSolomon.cpp.o CMakeFiles/RS_LDPC_Algorithm.dir/src/main.cpp.o CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/LdpcCode.cpp.o CMakeFiles/RS_LDPC_Algorithm.dir/LDPC/LdpcC/Constellation.cpp.o -o bin/RS_LDPC_Algorithm

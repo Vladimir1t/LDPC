@@ -8,8 +8,6 @@ set(CMAKE_DEPENDS_GENERATOR "Unix Makefiles")
 set(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
   "/Users/a/Desktop/LDPC/CMakeLists.txt"
-  "/Users/a/Desktop/LDPC/aff3ct/build/lib/cmake/aff3ct-3.0.2-154-g4416d17/aff3ct-config-version.cmake"
-  "/Users/a/Desktop/LDPC/aff3ct/build/lib/cmake/aff3ct-3.0.2-154-g4416d17/aff3ct-config.cmake"
   "CMakeFiles/4.0.1/CMakeCCompiler.cmake"
   "CMakeFiles/4.0.1/CMakeCXXCompiler.cmake"
   "CMakeFiles/4.0.1/CMakeSystem.cmake"
@@ -21,21 +19,14 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/opt/homebrew/share/cmake/Modules/CMakeLanguageInformation.cmake"
   "/opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInformation.cmake"
   "/opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake"
-  "/opt/homebrew/share/cmake/Modules/CheckCSourceCompiles.cmake"
-  "/opt/homebrew/share/cmake/Modules/CheckIncludeFile.cmake"
-  "/opt/homebrew/share/cmake/Modules/CheckLibraryExists.cmake"
   "/opt/homebrew/share/cmake/Modules/Compiler/AppleClang-C.cmake"
   "/opt/homebrew/share/cmake/Modules/Compiler/AppleClang-CXX.cmake"
   "/opt/homebrew/share/cmake/Modules/Compiler/CMakeCommonCompilerMacros.cmake"
   "/opt/homebrew/share/cmake/Modules/Compiler/Clang.cmake"
   "/opt/homebrew/share/cmake/Modules/Compiler/GNU.cmake"
-  "/opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake"
-  "/opt/homebrew/share/cmake/Modules/FindPackageMessage.cmake"
-  "/opt/homebrew/share/cmake/Modules/FindThreads.cmake"
   "/opt/homebrew/share/cmake/Modules/Internal/CMakeCLinkerInformation.cmake"
   "/opt/homebrew/share/cmake/Modules/Internal/CMakeCXXLinkerInformation.cmake"
   "/opt/homebrew/share/cmake/Modules/Internal/CMakeCommonLinkerInformation.cmake"
-  "/opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake"
   "/opt/homebrew/share/cmake/Modules/Linker/AppleClang-C.cmake"
   "/opt/homebrew/share/cmake/Modules/Linker/AppleClang-CXX.cmake"
   "/opt/homebrew/share/cmake/Modules/Linker/AppleClang.cmake"
@@ -65,5 +56,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/my_project.dir/DependInfo.cmake"
+  "CMakeFiles/RS_LDPC_Algorithm.dir/DependInfo.cmake"
   )

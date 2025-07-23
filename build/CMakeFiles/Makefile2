@@ -63,11 +63,11 @@ CMAKE_BINARY_DIR = /Users/a/Desktop/LDPC/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/my_project.dir/all
+all: CMakeFiles/RS_LDPC_Algorithm.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
-codegen: CMakeFiles/my_project.dir/codegen
+codegen: CMakeFiles/RS_LDPC_Algorithm.dir/codegen
 .PHONY : codegen
 
 # The main recursive "preinstall" target.
@@ -75,40 +75,40 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/my_project.dir/clean
+clean: CMakeFiles/RS_LDPC_Algorithm.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/my_project.dir
+# Target rules for target CMakeFiles/RS_LDPC_Algorithm.dir
 
 # All Build rule for target.
-CMakeFiles/my_project.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/a/Desktop/LDPC/build/CMakeFiles --progress-num=1,2 "Built target my_project"
-.PHONY : CMakeFiles/my_project.dir/all
+CMakeFiles/RS_LDPC_Algorithm.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/a/Desktop/LDPC/build/CMakeFiles --progress-num=1,2,3,4,5 "Built target RS_LDPC_Algorithm"
+.PHONY : CMakeFiles/RS_LDPC_Algorithm.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/my_project.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/a/Desktop/LDPC/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/my_project.dir/all
+CMakeFiles/RS_LDPC_Algorithm.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/a/Desktop/LDPC/build/CMakeFiles 5
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/RS_LDPC_Algorithm.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/a/Desktop/LDPC/build/CMakeFiles 0
-.PHONY : CMakeFiles/my_project.dir/rule
+.PHONY : CMakeFiles/RS_LDPC_Algorithm.dir/rule
 
 # Convenience name for target.
-my_project: CMakeFiles/my_project.dir/rule
-.PHONY : my_project
+RS_LDPC_Algorithm: CMakeFiles/RS_LDPC_Algorithm.dir/rule
+.PHONY : RS_LDPC_Algorithm
 
 # codegen rule for target.
-CMakeFiles/my_project.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/a/Desktop/LDPC/build/CMakeFiles --progress-num=1,2 "Finished codegen for target my_project"
-.PHONY : CMakeFiles/my_project.dir/codegen
+CMakeFiles/RS_LDPC_Algorithm.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/a/Desktop/LDPC/build/CMakeFiles --progress-num=1,2,3,4,5 "Finished codegen for target RS_LDPC_Algorithm"
+.PHONY : CMakeFiles/RS_LDPC_Algorithm.dir/codegen
 
 # clean rule for target.
-CMakeFiles/my_project.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/my_project.dir/build.make CMakeFiles/my_project.dir/clean
-.PHONY : CMakeFiles/my_project.dir/clean
+CMakeFiles/RS_LDPC_Algorithm.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RS_LDPC_Algorithm.dir/build.make CMakeFiles/RS_LDPC_Algorithm.dir/clean
+.PHONY : CMakeFiles/RS_LDPC_Algorithm.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
